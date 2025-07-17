@@ -1,16 +1,16 @@
 // QuotationForm.jsx ที่ใช้อยู่ในตอนนี้
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import '../fonts/THSarabun';
 import { useNavigate } from 'react-router-dom';
 
 
+
 function generateQuotationNumber() {
   const today = new Date();
   const dateStr = today.toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD
-  const randomDigits = Math.floor(1000 + Math.random() * 9000); // สุ่มเลข 4 หลัก
-  return `QT-${dateStr}-${randomDigits}`;
+  return `QT-${dateStr}`;
 }
 
 
@@ -23,9 +23,28 @@ export default function QuotationForm({ company }) {
       sessionStorage.removeItem('quotationClientName');
       sessionStorage.removeItem('quotationItems');
       setClientName('');
-      setItems([{ name: '', quantity: 1, price: 0 }]);
+      setItems([{ name: '', quantity: '', price: '' }]);
     };
-  const [note, setNote] = useState('หมายเหตุ: ราคานี้รวมภาษีมูลค่าเพิ่มแล้ว');
+  const [notes, setNotes] = useState(['']);;
+  const [paymentTerms, setPaymentTerms] = useState(['']);
+
+  const handlePaymentTermChange = (index, value) => {
+    const updated = [...paymentTerms];
+    updated[index] = value;
+    setPaymentTerms(updated);
+  };
+
+  const addPaymentTerm = () => {
+    setPaymentTerms([...paymentTerms, '']);
+  };
+
+  const removePaymentTerm = (index) => {
+    const updated = paymentTerms.filter((_, i) => i !== index);
+    setPaymentTerms(updated);
+  };
+
+  const [includeVAT, setIncludeVAT] = useState(true);
+
   const navigate = useNavigate();
 
 
@@ -41,9 +60,24 @@ export default function QuotationForm({ company }) {
   };
 
   const handleItemChange = (index, field, value) => {
-    const newItems = [...items];
-    newItems[index][field] = field === 'quantity' || field === 'price' ? Number(value) : value;
-    setItems(newItems);
+  const newItems = [...items];
+  newItems[index][field] = value; // เก็บเป็น string ไว้ก่อน
+  setItems(newItems);
+};
+
+  const handleNoteChange = (index, value) => {
+    const updatedNotes = [...notes];
+    updatedNotes[index] = value;
+    setNotes(updatedNotes);
+  };
+
+  const addNote = () => {
+    setNotes([...notes, '']);
+  };
+
+  const removeNote = (index) => {
+    const updatedNotes = notes.filter((_, i) => i !== index);
+    setNotes(updatedNotes);
   };
 
   const generatePDF = () => {
@@ -76,8 +110,8 @@ export default function QuotationForm({ company }) {
     const tableData = items.map((item) => [
       item.name,
       item.quantity,
-      item.price.toFixed(2),
-      (item.quantity * item.price).toFixed(2),
+      item.price,
+      (Number(item.quantity) * Number(item.price)).toFixed(2),
     ]);
 
     const today = new Date().toLocaleDateString('th-TH', {
@@ -114,25 +148,48 @@ export default function QuotationForm({ company }) {
     });
 
     // ✅ คำนวณราคารวมทั้งหมด
-    const subtotal = items.reduce((sum, item) => sum + item.quantity * item.price, 0);
-    const vat = subtotal * 0.07;
+    const subtotal = items.reduce(
+      (sum, item) => sum + Number(item.quantity) * Number(item.price),
+      0
+    );
+    const vat = includeVAT ? subtotal * 0.07 : 0;
     const grandTotal = subtotal + vat;
-
-    // ✅ แสดงราคารวมด้านล่างตาราง
+    
     const totalY = doc.lastAutoTable.finalY + 10;
-    doc.setFont('THSarabun');
+
+    if (includeVAT) {
+      doc.text('รวมเป็นเงิน', 130, totalY);
+      doc.text(`${subtotal.toFixed(2)} บาท`, 180, totalY, { align: 'right' });
+
+      doc.text('ภาษีมูลค่าเพิ่ม 7 %', 120, totalY + 7);
+      doc.text(`${vat.toFixed(2)} บาท`, 180, totalY + 7, { align: 'right' });
+
+      doc.text('ค่าใช้จ่ายรวมทั้งสิ้น', 120, totalY + 14);
+      doc.text(`${grandTotal.toFixed(2)} บาท`, 180, totalY + 14, { align: 'right' });
+    } else {
+      doc.text('รวมเป็นเงิน', 130, totalY);
+      doc.text(`${subtotal.toFixed(2)} บาท`, 180, totalY, { align: 'right' });
+
+      doc.text('ค่าใช้จ่ายรวมทั้งสิ้น', 120, totalY + 7);
+      doc.text(`${subtotal.toFixed(2)} บาท`, 180, totalY + 7, { align: 'right' });
+    }
+
+
+    let noteY = doc.lastAutoTable.finalY + 10;
     doc.setFontSize(14);
-    doc.text(`รวมเป็นเงิน`, 130, totalY);
-    doc.text(`${subtotal.toFixed(2)} บาท`, 180, totalY, { align: 'right' });
+    doc.text('หมายเหตุ:', 14, noteY);
+    notes.forEach((n, idx) => {
+      noteY += 7;
+      doc.text(`- ${n}`, 20, noteY);
+    });
 
-    doc.text('ภาษีมูลค่าเพิ่ม 7 %', 120, totalY + 7);
-    doc.text(`${vat.toFixed(2)} บาท`, 180, totalY + 7, { align: 'right' });
-
-    doc.text('ค่าใช้จ่ายรวมทั้งสิ้น', 120, totalY + 14);
-    doc.text(`${grandTotal.toFixed(2)} บาท`, 180, totalY + 14, { align: 'right' });
-
-    doc.text(note, 14, doc.lastAutoTable.finalY + 40);
-    doc.text('เงื่อนไขการชำระเงิน: โอนก่อนเริ่มงาน 50% ส่วนที่เหลือชำระหลังเสร็จงาน', 14, doc.lastAutoTable.finalY + 50);
+    let termY = noteY + 15;
+    doc.setFontSize(14);
+    doc.text('เงื่อนไขการชำระเงิน:', 14, termY);
+    paymentTerms.forEach((t, idx) => {
+      termY += 7;
+      doc.text(`- ${t}`, 20, termY);
+    });
 
     // ✅ ก่อน doc.save(...)
     sessionStorage.setItem('quotationClientName', clientName);
@@ -140,7 +197,7 @@ export default function QuotationForm({ company }) {
 
 
     doc.save('quotation.pdf');
-};
+  };
 
   return (
    <div className="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow space-y-5">
@@ -207,14 +264,79 @@ export default function QuotationForm({ company }) {
         ))}
       </div>
 
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={includeVAT}
+          onChange={() => setIncludeVAT(!includeVAT)}
+          id="vat-toggle"
+        />
+        <label htmlFor="vat-toggle" className="text-sm text-gray-700">รวมภาษีมูลค่าเพิ่ม 7%</label>
+      </div>
+
       {/* หมายเหตุ */}
-      <textarea
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        placeholder="หมายเหตุ เช่น ราคานี้รวมภาษีแล้ว"
-        rows={3}
-        className="w-full border rounded px-3 py-2 text-sm"
-      />
+      <div className="mt-6">
+        <h3 className="text-md font-semibold mb-2">หมายเหตุ</h3>
+
+        {notes.map((note, index) => (
+          <div key={index} className="flex items-center gap-2 mb-2">
+            <input
+              type="text"
+              value={note}
+              onChange={(e) => handleNoteChange(index, e.target.value)}
+              placeholder={`หมายเหตุ #${index + 1}`}
+              className="flex-1 px-3 py-2 border rounded-md text-sm"
+            />
+            {notes.length > 1 && (
+              <button
+                onClick={() => removeNote(index)}
+                className="text-red-500 hover:underline text-sm"
+              >
+                ❌
+              </button>
+            )}
+          </div>
+        ))}
+
+        <button
+          onClick={addNote}
+          className="border rounded px-3 py-2 text-sm hover:bg-gray-100"
+        >
+          ➕ เพิ่มหมายเหตุ
+        </button>
+      </div>
+
+      <div className="mt-6">
+        <h3 className="text-md font-semibold mb-2">เงื่อนไขการชำระเงิน</h3>
+
+        {paymentTerms.map((term, index) => (
+          <div key={index} className="flex items-center gap-2 mb-2">
+            <input
+              type="text"
+              value={term}
+              onChange={(e) => handlePaymentTermChange(index, e.target.value)}
+              placeholder={`เงื่อนไข #${index + 1}`}
+              className="flex-1 px-3 py-2 border rounded-md text-sm"
+            />
+            {paymentTerms.length > 1 && (
+              <button
+                onClick={() => removePaymentTerm(index)}
+                className="text-red-500 hover:underline text-sm"
+              >
+                ❌
+              </button>
+            )}
+          </div>
+        ))}
+
+        <button
+          onClick={addPaymentTerm}
+          className="border rounded px-3 py-2 text-sm hover:bg-gray-100"
+        >
+          ➕ เพิ่มเงื่อนไข
+        </button>
+      </div>
+
 
       {/* ปุ่มต่าง ๆ */}
       <div className="flex flex-wrap gap-3 pt-2">
