@@ -18,7 +18,7 @@ export default function QuotationForm({ company }) {
   const [quotationNumber] = useState(generateQuotationNumber());
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
-  const [items, setItems] = useState([{ name: '', quantity: 1, price: 0 }]);
+  const [items, setItems] = useState([{ name: '', quantity: '', price: '' }]);
   const clearCache = () => {
       sessionStorage.removeItem('quotationClientName');
       sessionStorage.removeItem('quotationItems');
@@ -56,7 +56,7 @@ export default function QuotationForm({ company }) {
   }, []);
 
   const addItem = () => {
-    setItems([...items, { name: '', quantity: 1, price: 0 }]);
+    setItems([...items, { name: '', quantity:'', price:'' }]);
   };
 
   const handleItemChange = (index, field, value) => {
