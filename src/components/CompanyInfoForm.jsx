@@ -1,17 +1,30 @@
-import { useState, useEffect } from 'react'; // ✅ ต้อง import useEffect ด้วย
+//
+//
+// CompanyInfoForm.jsxที่ใช้อยู่ตอนนี้
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function CompanyInfoForm({ onSubmit }) {
+  const [formText, setFormText] = useState('');
+  
+  const extractCompanyData = () => {
+    const nameMatch = formText.match(/ชื่อ[:：]?\s*(.+)/);
+    const addressMatch = formText.match(/ที่อยู่[:：]?\s*(.+)/);
+    const phoneMatch = formText.match(/เบอร์โทร[:：]?\s*(.+)/);
+    const emailMatch = formText.match(/อีเมล[:：]?\s*(.+)/);
+
+    setCompany({
+      ...company,
+      name: nameMatch?.[1] || '',
+      address: addressMatch?.[1] || '',
+      phone: phoneMatch?.[1] || '',
+      email: emailMatch?.[1] || '',
+    });
+  };
+
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const licenseKey = sessionStorage.getItem('licenseKey');
-    if (!licenseKey) {
-      navigate('/'); // ถ้าไม่มี licenseKey → กลับหน้าแรก
-    }
-  }, [navigate]); // ✅ เพิ่ม navigate เป็น dependency
-
-  const [form, setForm] = useState({
+  const [company, setCompany] = useState({
     name: '',
     address: '',
     phone: '',
@@ -19,39 +32,132 @@ export default function CompanyInfoForm({ onSubmit }) {
     logo: null,
   });
 
-  const handleChange = (e) => {
-    const { name, value, files } = e.target;
-    if (name === 'logo' && files[0]) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setForm((prev) => ({ ...prev, logo: reader.result }));
-      };
-      reader.readAsDataURL(files[0]);
-    } else {
-      setForm((prev) => ({ ...prev, [name]: value }));
-    }
+  const handleLogoUpload = (e) => {
+      const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setCompany({ ...company, logo: reader.result }); // ✅ เก็บเป็น base64
+    };
+    reader.readAsDataURL(file);
   };
 
-  const handleSubmit = () => {
-    if (!form.name || !form.logo) {
-      alert('กรุณากรอกชื่อบริษัทและอัปโหลดโลโก้');
-      return;
+  const handleSave = () => {
+    console.log('✅ บันทึกข้อมูลบริษัท:', company);
+    if (onSubmit) {
+      onSubmit(company); // ส่งข้อมูลกลับไปที่ App.jsx
     }
-    onSubmit(form); // ส่งข้อมูลไปเก็บไว้ใน App
-    navigate('/quotation-form'); // ✅ เปลี่ยนหน้าไปฟอร์มใบเสนอราคา
+
+    navigate('/quotation-form');
   };
 
   return (
-    <div className="p-4 border rounded shadow-md max-w-lg mx-auto mt-4">
-      <h2 className="text-xl font-bold mb-4">📇 ข้อมูลบริษัท</h2>
-      <input name="name" placeholder="ชื่อบริษัท" onChange={handleChange} className="border p-2 mb-2 w-full" />
-      <input name="address" placeholder="ที่อยู่บริษัท" onChange={handleChange} className="border p-2 mb-2 w-full" />
-      <input name="phone" placeholder="เบอร์โทร" onChange={handleChange} className="border p-2 mb-2 w-full" />
-      <input name="email" placeholder="อีเมล" onChange={handleChange} className="border p-2 mb-2 w-full" />
-      <input name="logo" type="file" accept="image/*" onChange={handleChange} className="mb-4" />
-      <button onClick={handleSubmit} className="bg-blue-500 text-white px-4 py-2 rounded">
-        ✅ บันทึกข้อมูลบริษัท
-      </button>
+    <div style={{ padding: '40px', maxWidth: '600px', margin: '0 auto' }}>
+      <h1 style={{ fontSize: '28px', marginBottom: '10px' }}>ข้อมูลบริษัท</h1>
+      <p style={{ marginBottom: '10px' }}>กรอกข้อความจากฟอร์ม</p>
+
+      <textarea
+        value={formText}
+        onChange={(e) => setFormText(e.target.value)}
+        rows={6}
+        style={{
+          width: '100%',
+          padding: '10px',
+          fontSize: '16px',
+          marginBottom: '10px',
+        }}
+        placeholder="สำหรับใส่ฟอร์มที่คัดลอกมา"
+      />
+
+      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+        <button
+          onClick={extractCompanyData}
+          style={{
+            padding: '6px 16px',
+            fontSize: '14px',
+            borderRadius: '8px',
+            border: '1px solid #000',
+          }}
+        >
+          ปุ่มดึงข้อมูลจากข้อความในฟอร์ม
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+        <label>
+          ชื่อบริษัท
+          <input
+            type="text"
+            value={company.name}
+            onChange={(e) =>
+              setCompany({ ...company, name: e.target.value })
+            }
+            style={{ width: '100%', padding: '8px', fontSize: '14px' }}
+          />
+        </label>
+
+        <label>
+          ที่อยู่บริษัท
+          <input
+            type="text"
+            value={company.address}
+            onChange={(e) =>
+              setCompany({ ...company, address: e.target.value })
+            }
+            style={{ width: '100%', padding: '8px', fontSize: '14px' }}
+          />
+        </label>
+
+        <label>
+          เบอร์ติดต่อ
+          <input
+            type="text"
+            value={company.phone}
+            onChange={(e) =>
+              setCompany({ ...company, phone: e.target.value })
+            }
+            style={{ width: '100%', padding: '8px', fontSize: '14px' }}
+          />
+        </label>
+
+        <label>
+          อีเมล
+          <input
+            type="email"
+            value={company.email}
+            onChange={(e) =>
+              setCompany({ ...company, email: e.target.value })
+            }
+            style={{ width: '100%', padding: '8px', fontSize: '14px' }}
+          />
+        </label>
+
+        <label>
+          เลือกโลโก้
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleLogoUpload}
+            style={{ display: 'block', marginTop: '5px' }}
+          />
+        </label>
+      </div>
+
+      <div style={{ textAlign: 'center', marginTop: '40px' }}>
+        <button
+          onClick={handleSave}
+          style={{
+            padding: '10px 20px',
+            fontSize: '16px',
+            borderRadius: '10px',
+            border: '1px solid #000',
+            background: '#f0f0f0',
+          }}
+        >
+          💾 บันทึกข้อมูลบริษัท
+        </button>
+      </div>
     </div>
   );
 }

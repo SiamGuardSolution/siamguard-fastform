@@ -1,4 +1,4 @@
-// QuotationForm.jsx ที่ใช้อยู่ในตอนนี้
+// ตรวจสอบQuotationForm.jsx ที่ใช้อยู่ในตอนนี้
 import React, { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -19,11 +19,16 @@ export default function QuotationForm({ company }) {
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [items, setItems] = useState([{ name: '', quantity: '', price: '' }]);
+
   const clearCache = () => {
       sessionStorage.removeItem('quotationClientName');
       sessionStorage.removeItem('quotationItems');
       setClientName('');
+      setClientPhone('');
       setItems([{ name: '', quantity: '', price: '' }]);
+      setNotes([]);
+      setPaymentTerms([]);
+      setPaymentChannels([]);
     };
   const [notes, setNotes] = useState(['']);;
   const [paymentTerms, setPaymentTerms] = useState(['']);
@@ -45,7 +50,26 @@ export default function QuotationForm({ company }) {
 
   const [includeVAT, setIncludeVAT] = useState(true);
 
+  const [paymentChannels, setPaymentChannels] = useState(['']);
+
+  const handlePaymentChannelChange = (index, value) => {
+    const updated = [...paymentChannels];
+    updated[index] = value;
+    setPaymentChannels(updated);
+  };
+
+  const addPaymentChannel = () => {
+    setPaymentChannels([...paymentChannels, '']);
+  };
+
+  const removePaymentChannel = (index) => {
+    const updated = paymentChannels.filter((_, i) => i !== index);
+    setPaymentChannels(updated);
+  };
+
   const navigate = useNavigate();
+
+
 
 
   useEffect(() => {
@@ -175,28 +199,71 @@ export default function QuotationForm({ company }) {
     }
 
 
-    let noteY = doc.lastAutoTable.finalY + 10;
-    doc.setFontSize(14);
-    doc.text('หมายเหตุ:', 14, noteY);
-    notes.forEach((n, idx) => {
-      noteY += 7;
-      doc.text(`- ${n}`, 20, noteY);
-    });
+    // ✅ กำหนดตำแหน่งเริ่มหลังค่าใช้จ่ายรวมทั้งสิ้น
+    let nextY = includeVAT ? totalY + 21 : totalY + 10;
 
-    let termY = noteY + 15;
+    // ✅ หมายเหตุ
+    if (notes.length > 0) {
+      doc.setFontSize(14);
+      doc.text('หมายเหตุ:', 14, nextY);
+      notes.forEach((n, idx) => {
+        nextY += 7;
+        doc.text(`- ${n}`, 20, nextY);
+      });
+      nextY += 7;
+    }
+
+    // ✅ เงื่อนไขการชำระเงิน
+    if (paymentTerms.length > 0) {
+      doc.setFontSize(14);
+      doc.text('เงื่อนไขการชำระเงิน:', 14, nextY);
+      paymentTerms.forEach((t, idx) => {
+        nextY += 7;
+        doc.text(`- ${t}`, 20, nextY);
+      });
+      nextY += 7;
+    }
+
+    // ✅ ช่องทางการชำระเงิน
+    if (paymentChannels.length > 0 && paymentChannels.some((ch) => ch.trim() !== '')) {
+      doc.setFontSize(14);
+      doc.text('ช่องทางการชำระเงิน (Mobile Banking):', 14, nextY);
+      paymentChannels.forEach((channel) => {
+        const lines = doc.splitTextToSize(channel, 180);
+        lines.forEach((line) => {
+          nextY += 7;
+          doc.text(`- ${line}`, 20, nextY);
+        });
+      });
+    }
+
+    // ✅ ลายเซ็นท้าย PDF
+    const footerY = doc.internal.pageSize.getHeight() - 50; // ระยะจากล่างขึ้นบน
+
+    // ฝั่งซ้าย - ลูกค้า
     doc.setFontSize(14);
-    doc.text('เงื่อนไขการชำระเงิน:', 14, termY);
-    paymentTerms.forEach((t, idx) => {
-      termY += 7;
-      doc.text(`- ${t}`, 20, termY);
-    });
+    doc.text(`ลงนาม ${clientName || '..................................'}`, 20, footerY);
+    doc.line(20, footerY + 15, 70, footerY + 15); // เส้นผู้สั่งซื้อ
+    doc.text('ผู้สั่งซื้อสินค้า', 25, footerY + 22);
+
+    // ฝั่งขวา - บริษัท
+    doc.text(`ลงนาม ${company.name || '..................................'}`, 120, footerY);
+    doc.line(120, footerY + 15, 170, footerY + 15); // เส้นผู้อนุมัติ
+    doc.text('ผู้อนุมัติ', 135, footerY + 22);
+
 
     // ✅ ก่อน doc.save(...)
     sessionStorage.setItem('quotationClientName', clientName);
     sessionStorage.setItem('quotationItems', JSON.stringify(items));
 
+    // ✅ เครดิตท้าย PDF
+    const pageHeight = doc.internal.pageSize.getHeight();
+    doc.setFontSize(10);
+    doc.setTextColor(50); // สีเทา
+    doc.text('SIAMGUARD FASTFORM', 14, pageHeight - 10);
 
     doc.save('quotation.pdf');
+
   };
 
   return (
@@ -335,6 +402,38 @@ export default function QuotationForm({ company }) {
         >
           ➕ เพิ่มเงื่อนไข
         </button>
+
+
+        <div className="mt-6">
+          <h3 className="text-md font-semibold mb-2">ช่องทางการชำระเงิน (Mobile Banking)</h3>
+
+          {paymentChannels.map((channel, index) => (
+            <div key={index} className="flex items-center gap-2 mb-2">
+              <input
+                type="text"
+                value={channel}
+                onChange={(e) => handlePaymentChannelChange(index, e.target.value)}
+                placeholder={`ช่องทาง #${index + 1}`}
+                className="flex-1 px-3 py-2 border rounded-md text-sm"
+              />
+              {paymentChannels.length > 1 && (
+                <button
+                  onClick={() => removePaymentChannel(index)}
+                  className="text-red-500 hover:underline text-sm"
+                >
+                  ❌
+                </button>
+              )}
+            </div>
+          ))}
+
+          <button
+            onClick={addPaymentChannel}
+            className="border rounded px-3 py-2 text-sm hover:bg-gray-100"
+          >
+            ➕ เพิ่มช่องทาง
+          </button>
+        </div>
       </div>
 
 
