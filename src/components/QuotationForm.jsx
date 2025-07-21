@@ -19,6 +19,8 @@ export default function QuotationForm({ company }) {
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [items, setItems] = useState([{ name: '', quantity: '', price: '' }]);
+  const [documentType, setDocumentType] = useState('ใบเสนอราคา');
+
 
   const clearCache = () => {
       sessionStorage.removeItem('quotationClientName');
@@ -28,7 +30,6 @@ export default function QuotationForm({ company }) {
       setItems([{ name: '', quantity: '', price: '' }]);
       setNotes([]);
       setPaymentTerms([]);
-      setPaymentChannels([]);
     };
   const [notes, setNotes] = useState(['']);;
   const [paymentTerms, setPaymentTerms] = useState(['']);
@@ -50,25 +51,7 @@ export default function QuotationForm({ company }) {
 
   const [includeVAT, setIncludeVAT] = useState(true);
 
-  const [paymentChannels, setPaymentChannels] = useState(['']);
-
-  const handlePaymentChannelChange = (index, value) => {
-    const updated = [...paymentChannels];
-    updated[index] = value;
-    setPaymentChannels(updated);
-  };
-
-  const addPaymentChannel = () => {
-    setPaymentChannels([...paymentChannels, '']);
-  };
-
-  const removePaymentChannel = (index) => {
-    const updated = paymentChannels.filter((_, i) => i !== index);
-    setPaymentChannels(updated);
-  };
-
   const navigate = useNavigate();
-
 
 
 
@@ -104,28 +87,53 @@ export default function QuotationForm({ company }) {
     setNotes(updatedNotes);
   };
 
+  const bankList = [
+    'ธนาคารกรุงเทพ',
+    'ธนาคารกรุงไทย',
+    'ธนาคารกรุงศรีอยุธยา',
+    'ธนาคารกสิกรไทย',
+    'ธนาคารไทยพาณิชย์',
+    'ธนาคารทหารไทยธนชาต',
+    'ธนาคารออมสิน',
+    'ธนาคารยูโอบี',
+    'ธนาคารเกียรตินาคินภัทร',
+    'ธนาคารซีไอเอ็มบีไทย',
+    'ธนาคารแลนด์ แอนด์ เฮ้าส์',
+  ];
+
+  const [bankAccounts, setBankAccounts] = useState([
+    { bank: '', accountNumber: '' },
+  ]);
+
   const generatePDF = () => {
     const doc = new jsPDF();
     doc.setFont('THSarabun');
 
     // ✅ แสดงโลโก้บริษัท
-    if (company.logo) {
+    if (company && company.logo) {
       doc.addImage(company.logo, 'PNG', 14, 10, 30, 30);
     }
 
+
     // ✅ ข้อมูลบริษัท
     doc.setFont('THSarabun');
-    doc.setFontSize(14);
+    doc.setFontSize(18);
     doc.text(company.name || '', 50, 15);
+    doc.setFontSize(14);
     doc.text(company.address || '', 50, 21);
     doc.text(`โทร: ${company.phone || ''} | อีเมล: ${company.email || ''}`, 50, 27);
 
+    //เส้นแนวนอนระหว่างหัวข้อใบเสนอราคากับวันที่
+    doc.setDrawColor(0); // สีดำ
+    doc.setLineWidth(0.5); // ความหนาเส้น
+    doc.line(14, 42, 195, 42); // x1, y1, x2, y2
+
     // ✅ หัวใบเสนอราคา
     doc.setFont('THSarabun');
-    doc.setFontSize(18);
-    doc.text('ใบเสนอราคา', 14, 50);
+    doc.setFontSize(25);
+    doc.text(documentType, 14, 50);
     doc.setFontSize(14);
-    doc.text(`เลขที่ใบเสนอราคา: ${quotationNumber}`, 190, 60, { align: 'right' }); // หรือปรับตำแหน่งตามต้องการ
+    doc.text(`เลขที่${documentType}: ${quotationNumber}`, 190, 60, { align: 'right' });
     doc.setFontSize(14);
     doc.text(`ชื่อลูกค้า: ${clientName}`, 14, 60);
     doc.text(`เบอร์โทรลูกค้า: ${clientPhone}`, 14, 66);
@@ -225,15 +233,21 @@ export default function QuotationForm({ company }) {
     }
 
     // ✅ ช่องทางการชำระเงิน
-    if (paymentChannels.length > 0 && paymentChannels.some((ch) => ch.trim() !== '')) {
+    if (
+      bankAccounts.length > 0 &&
+      bankAccounts.some((acc) => acc.bank && acc.accountNumber)
+    ) {
       doc.setFontSize(14);
       doc.text('ช่องทางการชำระเงิน (Mobile Banking):', 14, nextY);
-      paymentChannels.forEach((channel) => {
-        const lines = doc.splitTextToSize(channel, 180);
-        lines.forEach((line) => {
-          nextY += 7;
-          doc.text(`- ${line}`, 20, nextY);
-        });
+      bankAccounts.forEach((acc) => {
+        if (acc.bank && acc.accountNumber) {
+          const line = `${acc.bank} - เลขบัญชี ${acc.accountNumber}`;
+          const lines = doc.splitTextToSize(line, 180);
+          lines.forEach((l) => {
+            nextY += 7;
+            doc.text(`- ${l}`, 20, nextY);
+          });
+        }
       });
     }
 
@@ -242,14 +256,14 @@ export default function QuotationForm({ company }) {
 
     // ฝั่งซ้าย - ลูกค้า
     doc.setFontSize(14);
-    doc.text(`ลงนาม ${clientName || '..................................'}`, 20, footerY);
+    doc.text(`ลงนาม ${clientName || '..................................'}`, 25, footerY);
     doc.line(20, footerY + 15, 70, footerY + 15); // เส้นผู้สั่งซื้อ
-    doc.text('ผู้สั่งซื้อสินค้า', 25, footerY + 22);
+    doc.text('ผู้เสนอราคา', 37, footerY + 22);
 
     // ฝั่งขวา - บริษัท
-    doc.text(`ลงนาม ${company.name || '..................................'}`, 120, footerY);
+    doc.text(`ลงนาม ${company.name || '..................................'}`, 125, footerY);
     doc.line(120, footerY + 15, 170, footerY + 15); // เส้นผู้อนุมัติ
-    doc.text('ผู้อนุมัติ', 135, footerY + 22);
+    doc.text('ผู้มีอำนาจ', 140, footerY + 22);
 
 
     // ✅ ก่อน doc.save(...)
@@ -260,7 +274,7 @@ export default function QuotationForm({ company }) {
     const pageHeight = doc.internal.pageSize.getHeight();
     doc.setFontSize(10);
     doc.setTextColor(50); // สีเทา
-    doc.text('SIAMGUARD FASTFORM', 14, pageHeight - 10);
+    doc.text('SIAMGUARD FASTFORM', 14, pageHeight - 5);
 
     doc.save('quotation.pdf');
 
@@ -268,11 +282,25 @@ export default function QuotationForm({ company }) {
 
   return (
    <div className="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow space-y-5">
+    <div className="flex items-center gap-2 mb-2">
+      <label htmlFor="documentType" className="text-sm font-medium text-gray-700">ประเภทเอกสาร:</label>
+      <select
+        id="documentType"
+        value={documentType}
+        onChange={(e) => setDocumentType(e.target.value)}
+        className="border px-3 py-2 rounded text-sm"
+      >
+        <option value="ใบเสนอราคา">ใบเสนอราคา</option>
+        <option value="ใบเสร็จรับเงิน">ใบเสร็จรับเงิน</option>
+      </select>
+    </div>
       <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-        🧾 ข้อมูลใบเสนอราคา
+        🧾 ข้อมูลใบ{documentType}: <span className="font-mono text-black"></span>
       </h2>
 
-      <p className="text-sm text-gray-500">เลขที่ใบเสนอราคา: <span className="font-mono text-black">{quotationNumber}</span></p>
+      <p className="text-sm text-gray-500">
+        เลขที่{documentType}: <span className="font-mono text-black">{quotationNumber}</span>
+      </p>
 
       {/* ชื่อลูกค้า */}
       <input
@@ -295,7 +323,7 @@ export default function QuotationForm({ company }) {
       {/* รายการสินค้า */}
       <div className="space-y-2">
         {items.map((item, index) => (
-          <div key={index} className="grid grid-cols-4 gap-3">
+          <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-3 ">
             <input
               type="text"
               placeholder="ชื่อบริการ"
@@ -405,20 +433,49 @@ export default function QuotationForm({ company }) {
 
 
         <div className="mt-6">
-          <h3 className="text-md font-semibold mb-2">ช่องทางการชำระเงิน (Mobile Banking)</h3>
+          <h2 className="font-bold text-lg mb-2">
+            ช่องทางการชำระเงิน (Mobile Banking)
+          </h2>
 
-          {paymentChannels.map((channel, index) => (
-            <div key={index} className="flex items-center gap-2 mb-2">
-              <input
-                type="text"
-                value={channel}
-                onChange={(e) => handlePaymentChannelChange(index, e.target.value)}
-                placeholder={`ช่องทาง #${index + 1}`}
-                className="flex-1 px-3 py-2 border rounded-md text-sm"
-              />
-              {paymentChannels.length > 1 && (
+          {bankAccounts.map((entry, index) => (
+            <div key={index} className="mb-4 flex items-center gap-2">
+              <select
+                value={entry.bank}
+                onChange={(e) => {
+                  const updated = [...bankAccounts];
+                  updated[index].bank = e.target.value;
+                  setBankAccounts(updated);
+                }}
+                className="border px-3 py-2 rounded text-sm"
+              >
+                <option value="">เลือกธนาคาร</option>
+                {bankList.map((bank, idx) => (
+                  <option key={idx} value={bank}>
+                    {bank}
+                  </option>
+                ))}
+              </select>
+
+              {entry.bank && (
+                <input
+                  type="text"
+                  placeholder="เลขที่บัญชี"
+                  value={entry.accountNumber}
+                  onChange={(e) => {
+                    const updated = [...bankAccounts];
+                    updated[index].accountNumber = e.target.value;
+                    setBankAccounts(updated);
+                  }}
+                  className="border px-3 py-2 rounded text-sm"
+                />
+              )}
+
+              {bankAccounts.length > 1 && (
                 <button
-                  onClick={() => removePaymentChannel(index)}
+                  onClick={() => {
+                    const updated = bankAccounts.filter((_, i) => i !== index);
+                    setBankAccounts(updated);
+                  }}
                   className="text-red-500 hover:underline text-sm"
                 >
                   ❌
@@ -427,12 +484,17 @@ export default function QuotationForm({ company }) {
             </div>
           ))}
 
+
           <button
-            onClick={addPaymentChannel}
-            className="border rounded px-3 py-2 text-sm hover:bg-gray-100"
+            type="button"
+            onClick={() =>
+              setBankAccounts([...bankAccounts, { bank: '', accountNumber: '' }])
+            }
+            className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 text-sm"
           >
             ➕ เพิ่มช่องทาง
           </button>
+
         </div>
       </div>
 
