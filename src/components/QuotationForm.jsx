@@ -6,16 +6,8 @@ import '../fonts/THSarabun';
 import { useNavigate } from 'react-router-dom';
 
 
-
-function generateQuotationNumber() {
-  const today = new Date();
-  const dateStr = today.toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD
-  return `QT-${dateStr}`;
-}
-
-
 export default function QuotationForm({ company }) {
-  const [quotationNumber] = useState(generateQuotationNumber());
+  const [quotationNumber, setQuotationNumber] = useState('');
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [items, setItems] = useState([{ name: '', quantity: '', price: '' }]);
@@ -31,6 +23,7 @@ export default function QuotationForm({ company }) {
       setNotes([]);
       setPaymentTerms([]);
     };
+
   const [notes, setNotes] = useState(['']);;
   const [paymentTerms, setPaymentTerms] = useState(['']);
 
@@ -55,12 +48,17 @@ export default function QuotationForm({ company }) {
 
 
 
+
   useEffect(() => {
     const cachedClient = sessionStorage.getItem('quotationClientName');
     const cachedItems = sessionStorage.getItem('quotationItems');
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD
+    const prefix = documentType === 'ใบเสร็จรับเงิน' ? 'RN' : 'QT';
+    setQuotationNumber(`${prefix}-${dateStr}`);
     if (cachedClient) setClientName(cachedClient);
     if (cachedItems) setItems(JSON.parse(cachedItems));
-  }, []);
+  }, [documentType]);
 
   const addItem = () => {
     setItems([...items, { name: '', quantity:'', price:'' }]);
@@ -295,7 +293,7 @@ export default function QuotationForm({ company }) {
       </select>
     </div>
       <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-        🧾 ข้อมูลใบ{documentType}: <span className="font-mono text-black"></span>
+        🧾 ข้อมูล{documentType}: <span className="font-mono text-black"></span>
       </h2>
 
       <p className="text-sm text-gray-500">
@@ -329,21 +327,21 @@ export default function QuotationForm({ company }) {
               placeholder="ชื่อบริการ"
               value={item.name}
               onChange={(e) => handleItemChange(index, 'name', e.target.value)}
-              className="border rounded px-3 py-2 text-sm"
+              className="w-full border rounded px-3 py-2 text-sm"
             />
             <input
               type="number"
               placeholder="จำนวน"
               value={item.quantity}
               onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
-              className="border rounded px-3 py-2 text-sm"
+              className="w-full border rounded px-3 py-2 text-sm"
             />
             <input
               type="number"
               placeholder="ราคาต่อหน่วย"
               value={item.price}
               onChange={(e) => handleItemChange(index, 'price', e.target.value)}
-              className="border rounded px-3 py-2 text-sm"
+              className="w-full border rounded px-3 py-2 text-sm"
             />
             {index === items.length - 1 ? (
               <button
@@ -438,7 +436,7 @@ export default function QuotationForm({ company }) {
           </h2>
 
           {bankAccounts.map((entry, index) => (
-            <div key={index} className="mb-4 flex items-center gap-2">
+            <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-3">
               <select
                 value={entry.bank}
                 onChange={(e) => {
@@ -446,7 +444,7 @@ export default function QuotationForm({ company }) {
                   updated[index].bank = e.target.value;
                   setBankAccounts(updated);
                 }}
-                className="border px-3 py-2 rounded text-sm"
+                className="w-full sm:w-auto border px-3 py-2 rounded text-sm"
               >
                 <option value="">เลือกธนาคาร</option>
                 {bankList.map((bank, idx) => (
@@ -466,7 +464,7 @@ export default function QuotationForm({ company }) {
                     updated[index].accountNumber = e.target.value;
                     setBankAccounts(updated);
                   }}
-                  className="border px-3 py-2 rounded text-sm"
+                  className="w-full sm:w-auto border px-3 py-2 rounded text-sm"
                 />
               )}
 
