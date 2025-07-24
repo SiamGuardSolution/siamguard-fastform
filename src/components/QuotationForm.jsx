@@ -290,6 +290,9 @@ export default function QuotationForm({ company }) {
       >
         <option value="ใบเสนอราคา">ใบเสนอราคา</option>
         <option value="ใบเสร็จรับเงิน">ใบเสร็จรับเงิน</option>
+        <option value="ใบแจ้งหนี้">ใบแจ้งหนี้</option>
+        <option value="ใบกำกับภาษี">ใบกำกับภาษี</option>
+        <option value="ใบส่งของ">ใบส่งของ</option>
       </select>
     </div>
       <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">

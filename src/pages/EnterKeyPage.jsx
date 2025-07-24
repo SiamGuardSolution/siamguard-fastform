@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './EnterKeyPage.css'; // 👉 import CSS แยกต่างหาก
 
-const validKeys = ['SG1234', 'SG8888', 'SGCRM2025'];
+const validKeys = ['SG1234', 'SGCRM2025'];
 
 export default function EnterKeyPage() {
   const [keyInput, setKeyInput] = useState('');
