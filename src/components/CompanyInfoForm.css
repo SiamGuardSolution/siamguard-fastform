@@ -1,0 +1,93 @@
+.company-form-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 24px;
+  padding: 30px;
+  max-width: 1000px;
+  margin: 0 auto;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 16px;
+  box-shadow: 0 0 12px rgba(0,0,0,0.1);
+}
+
+.company-logo img {
+  max-width: 220px;
+  height: auto;
+  object-fit: contain;
+}
+
+.company-form {
+  flex: 1 1 300px;
+  min-width: 280px;
+}
+
+.form-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.textarea {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.input-group label {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  box-sizing: border-box;
+  margin-top: 4px;
+}
+
+.button {
+  padding: 10px 20px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid #000;
+  cursor: pointer;
+  min-width: 160px;
+}
+
+.button.primary {
+  background-color: #f0f0f0;
+}
+
+.button.secondary {
+  background-color: #e2e2e2;
+}
+
+.centered-button {
+  text-align: center;
+  margin-top: 24px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .company-form-container {
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+
+  .company-logo img {
+    max-width: 180px;
+  }
+}
