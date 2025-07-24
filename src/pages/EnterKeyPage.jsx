@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import './EnterKeyPage.css'; // 👉 import CSS แยกต่างหาก
 
 const validKeys = ['SG1234', 'SG8888', 'SGCRM2025'];
 
@@ -21,27 +22,26 @@ export default function EnterKeyPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white p-8 rounded shadow-md w-full max-w-sm text-center">
-        <h1 className="text-red-500 text-3xl font-bold">Test Tailwind!</h1>
+    <div className="enter-key-container">
+      <div className="enter-key-box">
+        <h1 className="enter-key-title">
+          🔒 เข้าสู่ระบบด้วย <span>License Key</span>
+        </h1>
 
-        <form onSubmit={handleSubmit} className="flex flex-col items-center space-y-4">
+        <form onSubmit={handleSubmit} className="enter-key-form">
           <input
             type="text"
             placeholder="กรอก License Key"
-            className="border px-4 py-2 rounded w-full text-center"
+            className="enter-key-input"
             value={keyInput}
             onChange={(e) => setKeyInput(e.target.value)}
           />
-          <button
-            type="submit"
-            className="bg-gray-300 text-black px-4 py-2 rounded hover:bg-gray-400 w-full"
-          >
+          <button type="submit" className="enter-key-button">
             ดำเนินการต่อ
           </button>
         </form>
 
-        {error && <p className="text-red-500 mt-4">{error}</p>}
+        {error && <p className="enter-key-error">{error}</p>}
       </div>
     </div>
   );
