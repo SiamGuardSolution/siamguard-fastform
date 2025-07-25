@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './CompanyInfoForm.css';
 
+
 export default function CompanyInfoForm({ onSubmit }) {
   const [formText, setFormText] = useState('');
   const navigate = useNavigate();
+  const [showTaxIdInPdf, setShowTaxIdInPdf] = useState(false);
 
   const [company, setCompany] = useState({
     name: '',
@@ -13,6 +15,7 @@ export default function CompanyInfoForm({ onSubmit }) {
     email: '',
     taxId: '',
     logo: null,
+    showTaxId: true,
   });
 
   const extractCompanyData = () => {
@@ -111,14 +114,27 @@ export default function CompanyInfoForm({ onSubmit }) {
               onChange={(e) => setCompany({ ...company, taxId: e.target.value })}
             />
           </label>
+        </div>
 
-          <label>เลือกโลโก้
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleLogoUpload}
-            />
-          </label>
+        <div style={{ display: 'flex', alignItems: 'center', marginTop: '8px', marginLeft: '0' }}>
+          <input
+            type="checkbox"
+            checked={showTaxIdInPdf}
+            onChange={(e) => setShowTaxIdInPdf(e.target.checked)}
+            style={{ marginRight: '8px' }}
+          />
+          <label>แสดงเลขประจำตัวผู้เสียภาษีใน PDF</label>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', marginTop: '20px', marginLeft: '0' }}>
+          <label htmlFor="logoInput">เลือกโลโก้</label>
+          <input
+            id="logoInput"
+            type="file"
+            accept="image/*"
+            onChange={handleLogoUpload}
+            style={{ marginLeft: '15px' }} // ← เว้นระยะห่าง
+          />
         </div>
 
         <div className="centered-button">

@@ -13,7 +13,8 @@ export default function QuotationForm({ company }) {
   const [clientPhone, setClientPhone] = useState('');
   const [items, setItems] = useState([{ name: '', quantity: '', price: '' }]);
   const [documentType, setDocumentType] = useState('ใบเสนอราคา');
-
+  const [clientAddress, setClientAddress] = useState('');
+  const [clientTaxId, setClientTaxId] = useState('');
 
   const clearCache = () => {
       sessionStorage.removeItem('quotationClientName');
@@ -23,7 +24,7 @@ export default function QuotationForm({ company }) {
       setItems([{ name: '', quantity: '', price: '' }]);
       setNotes([]);
       setPaymentTerms([]);
-    };
+  };
 
   const [notes, setNotes] = useState(['']);;
   const [paymentTerms, setPaymentTerms] = useState(['']);
@@ -46,8 +47,6 @@ export default function QuotationForm({ company }) {
   const [includeVAT, setIncludeVAT] = useState(true);
 
   const navigate = useNavigate();
-
-
 
 
   useEffect(() => {
@@ -112,7 +111,34 @@ export default function QuotationForm({ company }) {
     { bank: '', accountNumber: '' },
   ]);
 
+  const [showClientName, setShowClientName] = useState(true);
+  const [showClientAddress, setShowClientAddress] = useState(true);
+  const [showClientPhone, setShowClientPhone] = useState(true);
+  const [showClientTaxId, setShowClientTaxId] = useState(true);
+
+  const [clientSignerRole, setClientSignerRole] = useState('ผู้รับของ');
+  const [customClientRole, setCustomClientRole] = useState('');
+
+  const [companySignerRole, setCompanySignerRole] = useState('ผู้มีอำนาจ');
+  const [customCompanyRole, setCustomCompanyRole] = useState('');
+
+  const [clientRole] = useState('');;
+  const [companyRole] = useState('');
+
+
+
+
   const generatePDF = () => {
+    if (!company || !company.name) {
+      alert('กรุณากรอกข้อมูลบริษัทก่อนสร้าง PDF');
+      navigate('/company-form'); // 👉 พาไปหน้ากรอกข้อมูลบริษัท
+      return;
+    }
+
+    const resolvedClientRole = clientRole === 'อื่น ๆ โปรดระบุ' ? customClientRole : clientRole || 'ผู้เสนอราคา';
+    const resolvedCompanyRole = companyRole === 'อื่น ๆ โปรดระบุ' ? customCompanyRole : companyRole || 'ผู้มีอำนาจ';
+
+
     const doc = new jsPDF();
     doc.setFont('THSarabun');
 
@@ -129,21 +155,38 @@ export default function QuotationForm({ company }) {
     doc.setFontSize(14);
     doc.text(company.address || '', 50, 21);
     doc.text(`โทร: ${company.phone || ''} | อีเมล: ${company.email || ''}`, 50, 27);
+    
+    if (company.showTaxId && company.taxId) {
+      doc.text(`เลขประจำตัวผู้เสียภาษี: ${company.taxId}`, 50, 33);
+    }
 
     //เส้นแนวนอนระหว่างหัวข้อใบเสนอราคากับวันที่
     doc.setDrawColor(0); // สีดำ
-    doc.setLineWidth(0.5); // ความหนาเส้น
-    doc.line(14, 42, 195, 42); // x1, y1, x2, y2
+    doc.setLineWidth(0.25); // ความหนาเส้น
+    doc.line(14, 40, 195, 40); // x1, y1, x2, y2
 
     // ✅ หัวใบเสนอราคา
     doc.setFont('THSarabun');
     doc.setFontSize(25);
-    doc.text(documentType, 14, 50);
+    doc.text(documentType, 14, 52);
     doc.setFontSize(14);
     doc.text(`เลขที่${documentType}: ${quotationNumber}`, 190, 60, { align: 'right' });
     doc.setFontSize(14);
-    doc.text(`ชื่อลูกค้า: ${clientName}`, 14, 60);
-    doc.text(`เบอร์โทรลูกค้า: ${clientPhone}`, 14, 66);
+    if (showClientName) {
+      doc.text(`ชื่อลูกค้า: ${clientName}`, 14, 60);
+    }
+
+    if (showClientPhone) {
+      doc.text(`เบอร์โทรลูกค้า: ${clientPhone}`, 14, 66);
+    }
+
+    if (showClientAddress && clientAddress) {
+      doc.text(`ที่อยู่ลูกค้า: ${clientAddress}`, 14, 72);
+    }
+
+    if (showClientTaxId && clientTaxId) {
+      doc.text(`เลขประจำตัวผู้เสียภาษี: ${clientTaxId}`, 14, 78);
+    }
 
     // ✅ สร้างตารางสินค้า
     const tableData = items.map((item) => [
@@ -158,7 +201,7 @@ export default function QuotationForm({ company }) {
       month: 'long',
       day: 'numeric'
     });
-    doc.text(`วันที่: ${today}`, 190, 50, { align: 'right' }); // ปรับตำแหน่ง x,y ตามต้องการ
+    doc.text(`วันที่: ${today}`, 190, 52, { align: 'right' }); // ปรับตำแหน่ง x,y ตามต้องการ
 
 
     autoTable(doc, {
@@ -260,35 +303,48 @@ export default function QuotationForm({ company }) {
     }
 
     // ✅ ลายเซ็นท้าย PDF
-    const footerY = doc.internal.pageSize.getHeight() - 50; // ระยะจากล่างขึ้นบน
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const footerY = doc.internal.pageSize.getHeight() - 50;
 
-    if (['ใบเสนอราคา', 'ใบเสร็จรับเงิน', 'ใบส่งของ'].includes(documentType)) {
-      // ฝั่งลูกค้า
-      doc.text(`ลงนาม ${clientName || '..................................'}`, 25, footerY);
-      doc.line(20, footerY + 15, 70, footerY + 15);
-      doc.text(documentType === 'ใบส่งของ' ? 'ผู้รับของ' : 'ผู้เสนอราคา', 37, footerY + 22);
-    }
+    const signatureBoxWidth = 50;  // ความกว้างของกล่องลายเซ็น
+    const signatureSpacing = 40;   // ระยะห่างระหว่างกล่องลายเซ็น
 
-    if (['ใบเสร็จรับเงิน', 'ใบกำกับภาษี', 'ใบแจ้งหนี้', 'ใบส่งของ'].includes(documentType)) {
-      // ฝั่งบริษัท
-      doc.text(`ลงนาม ${company.name || '..................................'}`, 125, footerY);
-      doc.line(120, footerY + 15, 170, footerY + 15);
-      doc.text(documentType === 'ใบส่งของ' ? 'ผู้ส่งของ' : 'ผู้มีอำนาจ', 140, footerY + 22);
-    }
+    // คำนวณตำแหน่งซ้ายและขวา (ให้ layout อยู่ตรงกลาง)
+    const totalWidth = signatureBoxWidth * 2 + signatureSpacing;
+    const startX = (pageWidth - totalWidth) / 2;
+    const leftX = startX;
+    const rightX = leftX + signatureBoxWidth + signatureSpacing;
 
+    const clientText = `ลงนาม ${clientName || '..................................'}`;
+    const companyText = `ลงนาม ${company?.name || '..................................'}`;
+
+    const clientTextWidth = doc.getTextWidth(clientText);
+    const companyTextWidth = doc.getTextWidth(companyText);
+
+    const clientTextX = leftX + (signatureBoxWidth / 2) - (clientTextWidth / 2);
+    const companyTextX = rightX + (signatureBoxWidth / 2) - (companyTextWidth / 2);
+
+    // ✅ ฝั่งลูกค้า
+    doc.text(clientText, clientTextX, footerY);
+    doc.line(leftX, footerY + 15, leftX + signatureBoxWidth, footerY + 15);
+    doc.text(resolvedClientRole, leftX + signatureBoxWidth / 2 - doc.getTextWidth(resolvedClientRole) / 2, footerY + 22);
+
+    // ✅ ฝั่งบริษัท
+    doc.text(companyText, companyTextX, footerY);
+    doc.line(rightX, footerY + 15, rightX + signatureBoxWidth, footerY + 15);
+    doc.text(resolvedCompanyRole, rightX + signatureBoxWidth / 2 - doc.getTextWidth(resolvedCompanyRole) / 2, footerY + 22);
 
     // ✅ ก่อน doc.save(...)
     sessionStorage.setItem('quotationClientName', clientName);
     sessionStorage.setItem('quotationItems', JSON.stringify(items));
 
     // ✅ เครดิตท้าย PDF
-    const pageHeight = doc.internal.pageSize.getHeight();
+    const pageHeight = doc.internal.pageSize.getHeight() - 1;
     doc.setFontSize(10);
     doc.setTextColor(50); // สีเทา
     doc.text('SIAMGUARD FASTFORM', 14, pageHeight - 5);
 
-    doc.save(`${documentType}_${quotationNumber}.pdf`);
-
+    doc.save(`${documentType}_${quotationNumber}.pdf`)
   };
 
   return (
@@ -306,28 +362,94 @@ export default function QuotationForm({ company }) {
           <option value="ใบแจ้งหนี้">ใบแจ้งหนี้</option>
           <option value="ใบกำกับภาษี">ใบกำกับภาษี</option>
           <option value="ใบส่งของ">ใบส่งของ</option>
-        </select>
+        </select>     
       </div>
 
       <h2 className="quotation-section">🧾 ข้อมูล{documentType}</h2>
       <p className="quotation-label">เลขที่{documentType}: <span className="font-mono">{quotationNumber}</span></p>
 
-      <input
-        type="text"
-        placeholder="ชื่อลูกค้า"
-        value={clientName}
-        onChange={(e) => setClientName(e.target.value)}
-        className="quotation-input"
-      />
+      {/* ชื่อลูกค้า */}
+      <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '12px' }}>
+        <input
+          type="text"
+          placeholder="ชื่อลูกค้า"
+          value={clientName}
+          onChange={(e) => setClientName(e.target.value)}
+          className="quotation-input"
+        />
+        <label style={{ marginTop: '4px', fontSize: '14px' }}>
+          <input
+            type="checkbox"
+            checked={showClientName}
+            onChange={() => setShowClientName(!showClientName)}
+            style={{ marginRight: '6px' }}
+          />
+          แสดงชื่อลูกค้า
+        </label>
+      </div>
 
-      <input
-        type="text"
-        placeholder="เบอร์โทร"
-        value={clientPhone}
-        onChange={(e) => setClientPhone(e.target.value)}
-        className="quotation-input"
-      />
+      {/* เบอร์โทร */}
+      <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '12px' }}>
+        <input
+          type="text"
+          placeholder="เบอร์โทร"
+          value={clientPhone}
+          onChange={(e) => setClientPhone(e.target.value)}
+          className="quotation-input"
+        />
+        <label style={{ marginTop: '4px', fontSize: '14px' }}>
+          <input
+            type="checkbox"
+            checked={showClientPhone}
+            onChange={() => setShowClientPhone(!showClientPhone)}
+            style={{ marginRight: '6px' }}
+          />
+          แสดงเบอร์โทรศัพท์ลูกค้า
+        </label>
+      </div>
 
+      {/* ที่อยู่ลูกค้า */}
+      <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '12px' }}>
+        <input
+          type="text"
+          placeholder="ที่อยู่ลูกค้า"
+          value={clientAddress}
+          onChange={(e) => setClientAddress(e.target.value)}
+          className="quotation-input"
+        />
+        <label style={{ marginTop: '4px', fontSize: '14px' }}>
+          <input
+            type="checkbox"
+            checked={showClientAddress}
+            onChange={() => setShowClientAddress(!showClientAddress)}
+            style={{ marginRight: '6px' }}
+          />
+          แสดงที่อยู่ลูกค้า
+        </label>
+      </div>
+
+      {/* เลขประจำตัวผู้เสียภาษีลูกค้า */}
+      <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '12px' }}>
+        <input
+          type="text"
+          placeholder="เลขประจำตัวผู้เสียภาษีลูกค้า"
+          value={clientTaxId}
+          onChange={(e) => setClientTaxId(e.target.value)}
+          className="quotation-input"
+        />
+        <label style={{ marginTop: '4px', fontSize: '14px' }}>
+          <input
+            type="checkbox"
+            checked={showClientTaxId}
+            onChange={() => setShowClientTaxId(!showClientTaxId)}
+            style={{ marginRight: '6px' }}
+          />
+          แสดงเลขประจำตัวผู้เสียภาษีลูกค้า
+        </label>
+      </div>
+
+
+    
       <div className="quotation-section">
         {items.map((item, index) => (
           <div key={index} className="quotation-item-row">
@@ -466,6 +588,54 @@ export default function QuotationForm({ company }) {
         </button>
       </div>
 
+      <div className="quotation-section">
+        <label htmlFor="clientRole" className="quotation-label">ตำแหน่งผู้ลงนามฝั่งลูกค้า:</label>
+        <select
+          id="clientRole"
+          value={clientSignerRole}
+          onChange={(e) => setClientSignerRole(e.target.value)}
+          className="quotation-select"
+        >
+          <option value="ผู้รับของ">ผู้รับของ</option>
+          <option value="ผู้เสนอราคา">ผู้มีอำนาจ</option>
+          <option value="อื่น ๆ โปรดระบุ">อื่น ๆ โปรดระบุ</option>
+        </select>
+
+        {clientSignerRole === 'อื่น ๆ โปรดระบุ' && (
+          <input
+            type="text"
+            placeholder="ระบุตำแหน่ง"
+            value={customClientRole}
+            onChange={(e) => setCustomClientRole(e.target.value)}
+            className="quotation-input"
+          />
+        )}
+      </div>
+
+      <div className="quotation-section">
+        <label htmlFor="companyRole" className="quotation-label">ตำแหน่งผู้ลงนามฝั่งบริษัท:</label>
+        <select
+          id="companyRole"
+          value={companySignerRole}
+          onChange={(e) => setCompanySignerRole(e.target.value)}
+          className="quotation-select"
+        >
+          <option value="ผู้มีอำนาจ">ผู้เสนอราคา</option>
+          <option value="ผู้ส่งของ">ผู้ส่งของ</option>
+          <option value="อื่น ๆ โปรดระบุ">อื่น ๆ โปรดระบุ</option>
+        </select>
+
+        {companySignerRole === 'อื่น ๆ โปรดระบุ' && (
+          <input
+            type="text"
+            placeholder="ระบุตำแหน่ง"
+            value={customCompanyRole}
+            onChange={(e) => setCustomCompanyRole(e.target.value)}
+            className="quotation-input"
+          />
+        )}
+      </div>
+      
       <div className="quotation-buttons">
         <button onClick={() => navigate('/company-form')} className="quotation-button gray">
           🔧 แก้ข้อมูลบริษัท
