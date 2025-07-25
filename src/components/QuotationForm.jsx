@@ -5,6 +5,8 @@ import autoTable from 'jspdf-autotable';
 import '../fonts/THSarabun';
 import { useNavigate } from 'react-router-dom';
 import './QuotationForm.css';
+import SignatureCanvas from 'react-signature-canvas';
+import { useRef } from 'react';
 
 
 export default function QuotationForm({ company }) {
@@ -15,6 +17,9 @@ export default function QuotationForm({ company }) {
   const [documentType, setDocumentType] = useState('ใบเสนอราคา');
   const [clientAddress, setClientAddress] = useState('');
   const [clientTaxId, setClientTaxId] = useState('');
+  const clientSigPadRef = useRef(null);
+  const [clientSignatureURL, setClientSignatureURL] = useState('');
+
 
   const clearCache = () => {
       sessionStorage.removeItem('quotationClientName');
@@ -122,11 +127,6 @@ export default function QuotationForm({ company }) {
   const [companySignerRole, setCompanySignerRole] = useState('ผู้มีอำนาจ');
   const [customCompanyRole, setCustomCompanyRole] = useState('');
 
-  const [clientRole] = useState('');;
-  const [companyRole] = useState('');
-
-
-
 
   const generatePDF = () => {
     if (!company || !company.name) {
@@ -135,8 +135,9 @@ export default function QuotationForm({ company }) {
       return;
     }
 
-    const resolvedClientRole = clientRole === 'อื่น ๆ โปรดระบุ' ? customClientRole : clientRole || 'ผู้เสนอราคา';
-    const resolvedCompanyRole = companyRole === 'อื่น ๆ โปรดระบุ' ? customCompanyRole : companyRole || 'ผู้มีอำนาจ';
+    const resolvedClientRole = clientSignerRole === 'อื่น ๆ โปรดระบุ' ? customClientRole : clientSignerRole || 'ผู้เสนอราคา';
+    const resolvedCompanyRole = companySignerRole === 'อื่น ๆ โปรดระบุ' ? customCompanyRole : companySignerRole || 'ผู้มีอำนาจ';
+
 
     const doc = new jsPDF();
     doc.setFont('THSarabun');
@@ -342,6 +343,10 @@ export default function QuotationForm({ company }) {
     doc.setFontSize(10);
     doc.setTextColor(50); // สีเทา
     doc.text('SIAMGUARD FASTFORM', 14, pageHeight - 5);
+
+    if (clientSignatureURL) {
+      doc.addImage(clientSignatureURL, 'PNG', leftX, footerY + 2, 50, 20); // ซ้าย
+    }
 
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
@@ -647,6 +652,38 @@ export default function QuotationForm({ company }) {
             className="quotation-input"
           />
         )}
+      </div>
+
+      <div className="quotation-section">
+        <h3>ลายเซ็นลูกค้า</h3>
+        <SignatureCanvas
+          penColor="black"
+          canvasProps={{ width: 300, height: 100, className: 'signature-canvas' }}
+          ref={clientSigPadRef}
+        />
+        <div style={{ marginTop: 8 }}>
+          <button
+            type="button"
+            className="quotation-button lightgray"
+            onClick={() => {
+              clientSigPadRef.current.clear();
+              setClientSignatureURL('');
+            }}
+          >
+            ล้างลายเซ็น
+          </button>
+          <button
+            type="button"
+            className="quotation-button blue"
+            onClick={() => {
+              const dataURL = clientSigPadRef.current.getCanvas().toDataURL('image/png');
+              setClientSignatureURL(dataURL);
+              alert('✅ ลายเซ็นถูกบันทึกเรียบร้อยแล้ว');
+            }}
+          >
+            บันทึกลายเซ็น
+          </button>
+        </div>
       </div>
       
       <div className="quotation-buttons">

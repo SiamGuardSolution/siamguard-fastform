@@ -84,7 +84,7 @@ export default function EnterKeyPage() {
             cursor: 'pointer',
           }}
         >
-          ✅ ยืนยัน License Key
+        ยืนยัน License Key
         </button>
       </div>
     </div>
