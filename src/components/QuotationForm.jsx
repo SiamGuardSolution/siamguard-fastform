@@ -138,7 +138,6 @@ export default function QuotationForm({ company }) {
     const resolvedClientRole = clientRole === 'อื่น ๆ โปรดระบุ' ? customClientRole : clientRole || 'ผู้เสนอราคา';
     const resolvedCompanyRole = companyRole === 'อื่น ๆ โปรดระบุ' ? customCompanyRole : companyRole || 'ผู้มีอำนาจ';
 
-
     const doc = new jsPDF();
     doc.setFont('THSarabun');
 
@@ -344,7 +343,21 @@ export default function QuotationForm({ company }) {
     doc.setTextColor(50); // สีเทา
     doc.text('SIAMGUARD FASTFORM', 14, pageHeight - 5);
 
-    doc.save(`${documentType}_${quotationNumber}.pdf`)
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    const blob = doc.output('blob');
+    const url = URL.createObjectURL(blob);
+
+    if (isMobile) {
+      window.open(url); // สำหรับมือถือ เปิดให้ดูเลย
+    } else {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'quotation.pdf';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   return (
