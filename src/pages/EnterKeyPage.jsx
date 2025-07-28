@@ -1,4 +1,4 @@
-// EnterKeyPage.jsx (พร้อมระบบตรวจสอบ Key + background)
+// นี่คือโค้ด EnterKeyPage.jsx (พร้อมระบบตรวจสอบ Key + background) เพิ่มเติมปุ่มจากโค้ดนี้โดยไม่เปลี่ยนแปลงโค้ดเดิม
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -86,6 +86,29 @@ export default function EnterKeyPage() {
         >
         ยืนยัน License Key
         </button>
+
+                {/* ปุ่มซื้อผ่านระบบอัตโนมัติ */}
+        <div style={{ marginTop: '20px', textAlign: 'center' }}>
+          <p style={{ marginBottom: '10px', color: '#555' }}>ยังไม่มี License Key?</p>
+          <button
+            onClick={() => {
+              const beamCheckoutUrl =
+                'https://pay.beamcheckout.com/siamguard/SGFastform';
+              window.location.href = beamCheckoutUrl;
+            }}
+            style={{
+              padding: '10px 16px',
+              fontSize: '16px',
+              backgroundColor: '#28a745',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+            }}
+          >
+            ซื้อผ่านระบบอัตโนมัติ
+          </button>
+        </div>
       </div>
     </div>
   );
