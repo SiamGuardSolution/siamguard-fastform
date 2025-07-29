@@ -87,13 +87,13 @@ export default function EnterKeyPage() {
         ยืนยัน License Key
         </button>
 
-                {/* ปุ่มซื้อผ่านระบบอัตโนมัติ */}
+        {/* ปุ่มซื้อผ่านระบบอัตโนมัติ */}
         <div style={{ marginTop: '20px', textAlign: 'center' }}>
           <p style={{ marginBottom: '10px', color: '#555' }}>ยังไม่มี License Key?</p>
           <button
             onClick={() => {
               const beamCheckoutUrl =
-                'https://pay.beamcheckout.com/siamguard/SGFastform';
+                'https://pay.beamcheckout.com/siamguard/FastformSG';
               window.location.href = beamCheckoutUrl;
             }}
             style={{
@@ -107,6 +107,26 @@ export default function EnterKeyPage() {
             }}
           >
             ซื้อผ่านระบบอัตโนมัติ
+          </button>
+        </div>
+
+        {/* ปุ่มเพิ่มเติม: ดูวิดีโอสาธิต */}
+        <div style={{ marginTop: '20px', textAlign: 'center' }}>
+          <button
+            onClick={() => {
+              window.open('https://www.youtube.com/watch?v=YOUR_VIDEO_ID', '_blank');
+            }}
+            style={{
+              padding: '10px 16px',
+              fontSize: '16px',
+              backgroundColor: '#6c757d',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+            }}
+          >
+            ▶️ ดูวิดีโอวิธีใช้งาน
           </button>
         </div>
       </div>

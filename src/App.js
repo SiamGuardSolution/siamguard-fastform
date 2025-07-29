@@ -11,6 +11,7 @@ import CompanyInfoForm from './components/CompanyInfoForm';
 import QuotationForm from './components/QuotationForm';
 
 import './App.css';
+import ThankYouPage from './pages/ThankYouPage';
 
 function AppWrapper() {
   return (
@@ -61,6 +62,7 @@ function App() {
           path="*"
           element={<h1>404 - Not Found</h1>} 
         />
+        <Route path="/thank-you" element={<ThankYouPage />} />
       </Routes>
     </div>
   );
