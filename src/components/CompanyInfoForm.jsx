@@ -1,11 +1,11 @@
+// src/components/CompanyInfoForm.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import './CompanyInfoForm.css';
-
+import { useRouter } from 'next/router';
+import styles from './CompanyInfoForm.module.css';
 
 export default function CompanyInfoForm({ onSubmit }) {
+  const router = useRouter();
   const [formText, setFormText] = useState('');
-  const navigate = useNavigate();
   const [showTaxIdInPdf, setShowTaxIdInPdf] = useState(false);
 
   const [company, setCompany] = useState({
@@ -47,17 +47,26 @@ export default function CompanyInfoForm({ onSubmit }) {
   };
 
   const handleSave = () => {
-    console.log('✅ บันทึกข้อมูลบริษัท:', company);
-    if (onSubmit) {
-      onSubmit(company);
-    }
-    navigate('/quotation-form');
+    const companyToSave = {
+      name: company.name,
+      address: company.address,
+      phone: company.phone,
+      email: company.email,
+      taxId: company.taxId,
+      logoBase64: company.logo,
+      showTaxId: showTaxIdInPdf,
+    };
+
+    sessionStorage.setItem('companyInfo', JSON.stringify(companyToSave));
+    router.push('/quotation-form');
   };
 
+
+
   return (
-    <div className="company-form-container">
-      <div className="company-form">
-        <h1 className="form-title">ข้อมูลบริษัท</h1>
+    <div className={styles.companyFormContainer}>
+       <div className={styles.companyForm}>
+        <h1 className={styles.formTitle}>ข้อมูลบริษัท</h1>
         <p>กรอกข้อความจากฟอร์ม</p>
 
         <textarea
@@ -65,16 +74,19 @@ export default function CompanyInfoForm({ onSubmit }) {
           onChange={(e) => setFormText(e.target.value)}
           rows={5}
           placeholder="สำหรับใส่ฟอร์มที่คัดลอกมา"
-          className="textarea"
+          className={styles.textarea}
         />
 
-        <div className="centered-button">
-          <button onClick={extractCompanyData} className="button secondary">
+        <div className={styles.centeredButton}>
+          <button 
+            className={styles.buttonSecondary}
+            onClick={extractCompanyData}
+          >
             📄 ดึงข้อมูลจากข้อความ
           </button>
         </div>
 
-        <div className="input-group">
+        <div className={styles.inputGroup}>
           <label>ชื่อบริษัท
             <input
               type="text"
@@ -116,7 +128,7 @@ export default function CompanyInfoForm({ onSubmit }) {
           </label>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', marginTop: '8px', marginLeft: '0' }}>
+         <div className={styles.checkboxRow}>
           <input
             type="checkbox"
             checked={showTaxIdInPdf}
@@ -126,19 +138,22 @@ export default function CompanyInfoForm({ onSubmit }) {
           <label>แสดงเลขประจำตัวผู้เสียภาษีใน PDF</label>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', marginTop: '20px', marginLeft: '0' }}>
+        <div className={styles.logoUpload}>
           <label htmlFor="logoInput">เลือกโลโก้</label>
           <input
             id="logoInput"
             type="file"
             accept="image/*"
             onChange={handleLogoUpload}
-            style={{ marginLeft: '15px' }} // ← เว้นระยะห่าง
+            style={{ marginLeft: '15px' }}
           />
         </div>
 
-        <div className="centered-button">
-          <button onClick={handleSave} className="button primary">
+        <div className={styles.centeredButton}>
+          <button 
+            onClick={handleSave}
+            className={styles.buttonPrimary}
+          >
             💾 บันทึกข้อมูลบริษัท
           </button>
         </div>

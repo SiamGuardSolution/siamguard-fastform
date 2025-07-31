@@ -1,15 +1,13 @@
 // ตรวจสอบQuotationForm.jsx ที่ใช้อยู่ในตอนนี้
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import '../fonts/THSarabun';
-import { useNavigate } from 'react-router-dom';
-import './QuotationForm.css';
+import { useRouter } from 'next/router';
 import SignatureCanvas from 'react-signature-canvas';
-import { useRef } from 'react';
+import styles from './QuotationForm.module.css';
 
-
-export default function QuotationForm({ company }) {
+export default function QuotationForm() {
   const [quotationNumber, setQuotationNumber] = useState('');
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
@@ -19,6 +17,9 @@ export default function QuotationForm({ company }) {
   const [clientTaxId, setClientTaxId] = useState('');
   const clientSigPadRef = useRef(null);
   const [clientSignatureURL, setClientSignatureURL] = useState('');
+  const [company, setCompany] = useState(null);
+  
+
 
 
   const clearCache = () => {
@@ -51,12 +52,21 @@ export default function QuotationForm({ company }) {
 
   const [includeVAT, setIncludeVAT] = useState(true);
 
-  const navigate = useNavigate();
+  const router = useRouter();
 
 
   useEffect(() => {
     const cachedClient = sessionStorage.getItem('quotationClientName');
     const cachedItems = sessionStorage.getItem('quotationItems');
+
+    const companyInfo = sessionStorage.getItem('companyInfo');
+    if (!companyInfo) {
+      alert('กรุณากรอกข้อมูลบริษัทก่อนสร้าง PDF');
+      return;
+    }
+
+    setCompany(JSON.parse(companyInfo)); // ✅ โหลดข้อมูลบริษัทเข้า state
+
     const today = new Date();
     const dateStr = today.toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD
     const prefixMap = {
@@ -72,6 +82,7 @@ export default function QuotationForm({ company }) {
     if (cachedClient) setClientName(cachedClient);
     if (cachedItems) setItems(JSON.parse(cachedItems));
   }, [documentType]);
+
 
   const addItem = () => {
     setItems([...items, { name: '', quantity:'', price:'' }]);
@@ -131,7 +142,7 @@ export default function QuotationForm({ company }) {
   const generatePDF = () => {
     if (!company || !company.name) {
       alert('กรุณากรอกข้อมูลบริษัทก่อนสร้าง PDF');
-      navigate('/company-form'); // 👉 พาไปหน้ากรอกข้อมูลบริษัท
+      router.push('/company-form'); // 👉 พาไปหน้ากรอกข้อมูลบริษัท
       return;
     }
 
@@ -206,7 +217,7 @@ export default function QuotationForm({ company }) {
 
     autoTable(doc, {
       
-      startY: 75,
+      startY: 80,
       head: [['สินค้า/บริการ', 'จำนวน', 'ราคาต่อหน่วย', 'รวม']],
       body: tableData,
       styles: {
@@ -321,8 +332,8 @@ export default function QuotationForm({ company }) {
     const clientTextWidth = doc.getTextWidth(clientText);
     const companyTextWidth = doc.getTextWidth(companyText);
 
-    const clientTextX = leftX + (signatureBoxWidth / 2) - (clientTextWidth / 2);
-    const companyTextX = rightX + (signatureBoxWidth / 2) - (companyTextWidth / 2);
+    const clientTextX = rightX + (signatureBoxWidth / 2) - (clientTextWidth / 2);
+    const companyTextX = leftX + (signatureBoxWidth / 2) - (companyTextWidth / 2);
 
     // ✅ ฝั่งลูกค้า
     doc.text(clientText, clientTextX, footerY);
@@ -366,14 +377,14 @@ export default function QuotationForm({ company }) {
   };
 
   return (
-    <div className="quotation-form">
-      <div className="quotation-section">
-        <label htmlFor="documentType" className="quotation-label">ประเภทเอกสาร:</label>
+    <div className={styles["quotation-form"]}>
+      <div className={styles["quotation-section"]}>
+        <label htmlFor="documentType" className={styles["quotation-label"]}>ประเภทเอกสาร:</label>
         <select
           id="documentType"
           value={documentType}
           onChange={(e) => setDocumentType(e.target.value)}
-          className="quotation-select"
+          className={styles["quotation-select"]}
         >
           <option value="ใบเสนอราคา">ใบเสนอราคา</option>
           <option value="ใบเสร็จรับเงิน">ใบเสร็จรับเงิน</option>
@@ -383,8 +394,8 @@ export default function QuotationForm({ company }) {
         </select>     
       </div>
 
-      <h2 className="quotation-section">🧾 ข้อมูล{documentType}</h2>
-      <p className="quotation-label">เลขที่{documentType}: <span className="font-mono">{quotationNumber}</span></p>
+      <h2 className={styles["quotation-section"]}>🧾 ข้อมูล{documentType}</h2>
+      <p className={styles["quotation-label"]}>เลขที่{documentType}: <span className="font-mono">{quotationNumber}</span></p>
 
       {/* ชื่อลูกค้า */}
       <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '12px' }}>
@@ -393,7 +404,7 @@ export default function QuotationForm({ company }) {
           placeholder="ชื่อลูกค้า"
           value={clientName}
           onChange={(e) => setClientName(e.target.value)}
-          className="quotation-input"
+          className={styles["quotation-input"]}
         />
         <label style={{ marginTop: '4px', fontSize: '14px' }}>
           <input
@@ -413,7 +424,7 @@ export default function QuotationForm({ company }) {
           placeholder="เบอร์โทร"
           value={clientPhone}
           onChange={(e) => setClientPhone(e.target.value)}
-          className="quotation-input"
+          className={styles["quotation-input"]}
         />
         <label style={{ marginTop: '4px', fontSize: '14px' }}>
           <input
@@ -433,7 +444,7 @@ export default function QuotationForm({ company }) {
           placeholder="ที่อยู่ลูกค้า"
           value={clientAddress}
           onChange={(e) => setClientAddress(e.target.value)}
-          className="quotation-input"
+          className={styles["quotation-input"]}
         />
         <label style={{ marginTop: '4px', fontSize: '14px' }}>
           <input
@@ -453,7 +464,7 @@ export default function QuotationForm({ company }) {
           placeholder="เลขประจำตัวผู้เสียภาษีลูกค้า"
           value={clientTaxId}
           onChange={(e) => setClientTaxId(e.target.value)}
-          className="quotation-input"
+          className={styles["quotation-input"]}
         />
         <label style={{ marginTop: '4px', fontSize: '14px' }}>
           <input
@@ -468,32 +479,32 @@ export default function QuotationForm({ company }) {
 
 
     
-      <div className="quotation-section">
+      <div className={styles["quotation-section"]}>
         {items.map((item, index) => (
-          <div key={index} className="quotation-item-row">
+          <div key={index} className={styles["quotation-item-row"]}>
             <input
               type="text"
               placeholder="ชื่อบริการ"
               value={item.name}
               onChange={(e) => handleItemChange(index, 'name', e.target.value)}
-              className="quotation-input"
+              className={styles["quotation-input"]}
             />
             <input
               type="number"
               placeholder="จำนวน"
               value={item.quantity}
               onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
-              className="quotation-input"
+              className={styles["quotation-input"]}
             />
             <input
               type="number"
               placeholder="ราคาต่อหน่วย"
               value={item.price}
               onChange={(e) => handleItemChange(index, 'price', e.target.value)}
-              className="quotation-input"
+              className={styles["quotation-input"]}
             />
             {index === items.length - 1 && (
-              <button onClick={addItem} className="quotation-button blue">
+              <button onClick={addItem} className={styles["quotation-button blue"]}>
                 + เพิ่มรายการ
               </button>
             )}
@@ -501,19 +512,19 @@ export default function QuotationForm({ company }) {
         ))}
       </div>
 
-      <div className="quotation-section">
-        <label className="quotation-label">
+      <div className={styles["quotation-section"]}>
+        <label className={styles["quotation-label"]}>
           <input
             type="checkbox"
             checked={includeVAT}
             onChange={() => setIncludeVAT(!includeVAT)}
-            className="quotation-checkbox"
+            className={styles["quotation-checkbox"]}
           />
           รวมภาษีมูลค่าเพิ่ม 7%
         </label>
       </div>
 
-      <div className="quotation-section quotation-note">
+      <div className={styles["quotation-section quotation-note"]}>
         <h3>หมายเหตุ</h3>
         {notes.map((note, index) => (
           <div key={index}>
@@ -522,19 +533,19 @@ export default function QuotationForm({ company }) {
               value={note}
               onChange={(e) => handleNoteChange(index, e.target.value)}
               placeholder={`หมายเหตุ #${index + 1}`}
-              className="quotation-input"
+              className={styles["quotation-input"]}
             />
             {notes.length > 1 && (
-              <button onClick={() => removeNote(index)} className="quotation-button red">
+              <button onClick={() => removeNote(index)} className={styles["quotation-button red"]}>
                 ❌
               </button>
             )}
           </div>
         ))}
-        <button onClick={addNote} className="quotation-button lightgray">➕ เพิ่มหมายเหตุ</button>
+        <button onClick={addNote} className={styles["quotation-button lightgray"]}>➕ เพิ่มหมายเหตุ</button>
       </div>
 
-      <div className="quotation-section quotation-payment">
+      <div className={styles["quotation-section quotation-payment"]}>
         <h3>เงื่อนไขการชำระเงิน</h3>
         {paymentTerms.map((term, index) => (
           <div key={index}>
@@ -543,19 +554,19 @@ export default function QuotationForm({ company }) {
               value={term}
               onChange={(e) => handlePaymentTermChange(index, e.target.value)}
               placeholder={`เงื่อนไข #${index + 1}`}
-              className="quotation-input"
+              className={styles["quotation-input"]}
             />
             {paymentTerms.length > 1 && (
-              <button onClick={() => removePaymentTerm(index)} className="quotation-button red">
+              <button onClick={() => removePaymentTerm(index)} className={styles["quotation-button red"]}>
                 ❌
               </button>
             )}
           </div>
         ))}
-        <button onClick={addPaymentTerm} className="quotation-button lightgray">➕ เพิ่มเงื่อนไข</button>
+        <button onClick={addPaymentTerm} className={styles["quotation-button lightgray"]}>➕ เพิ่มเงื่อนไข</button>
       </div>
 
-      <div className="quotation-section">
+      <div className={styles["quotation-section"]}>
         <h3>ช่องทางการชำระเงิน (Mobile Banking)</h3>
         {bankAccounts.map((entry, index) => (
           <div key={index}>
@@ -566,7 +577,7 @@ export default function QuotationForm({ company }) {
                 updated[index].bank = e.target.value;
                 setBankAccounts(updated);
               }}
-              className="quotation-select"
+              className={styles["quotation-select"]}
             >
               <option value="">เลือกธนาคาร</option>
               {bankList.map((bank, idx) => (
@@ -582,7 +593,7 @@ export default function QuotationForm({ company }) {
                 updated[index].accountNumber = e.target.value;
                 setBankAccounts(updated);
               }}
-              className="quotation-input"
+              className={styles["quotation-input"]}
             />
             {bankAccounts.length > 1 && (
               <button
@@ -590,7 +601,7 @@ export default function QuotationForm({ company }) {
                   const updated = bankAccounts.filter((_, i) => i !== index);
                   setBankAccounts(updated);
                 }}
-                className="quotation-button red"
+                className={styles["quotation-button red"]}
               >
                 ❌
               </button>
@@ -600,19 +611,19 @@ export default function QuotationForm({ company }) {
         <button
           type="button"
           onClick={() => setBankAccounts([...bankAccounts, { bank: '', accountNumber: '' }])}
-          className="quotation-button purple"
+          className={styles["quotation-button purple"]}
         >
           ➕ เพิ่มช่องทาง
         </button>
       </div>
 
-      <div className="quotation-section">
-        <label htmlFor="clientRole" className="quotation-label">ตำแหน่งผู้ลงนามฝั่งลูกค้า:</label>
+      <div className={styles["quotation-section"]}>
+        <label htmlFor="clientRole" className={styles["quotation-label"]}>ตำแหน่งผู้ลงนามฝั่งลูกค้า:</label>
         <select
           id="clientRole"
           value={clientSignerRole}
           onChange={(e) => setClientSignerRole(e.target.value)}
-          className="quotation-select"
+          className={styles["quotation-select"]}
         >
           <option value="ผู้รับของ">ผู้รับของ</option>
           <option value="ผู้เสนอราคา">ผู้มีอำนาจ</option>
@@ -625,18 +636,18 @@ export default function QuotationForm({ company }) {
             placeholder="ระบุตำแหน่ง"
             value={customClientRole}
             onChange={(e) => setCustomClientRole(e.target.value)}
-            className="quotation-input"
+            className={styles["quotation-input"]}
           />
         )}
       </div>
 
-      <div className="quotation-section">
-        <label htmlFor="companyRole" className="quotation-label">ตำแหน่งผู้ลงนามฝั่งบริษัท:</label>
+      <div className={styles["quotation-section"]}>
+        <label htmlFor="companyRole" className={styles["quotation-label"]}>ตำแหน่งผู้ลงนามฝั่งบริษัท:</label>
         <select
           id="companyRole"
           value={companySignerRole}
           onChange={(e) => setCompanySignerRole(e.target.value)}
-          className="quotation-select"
+          className={styles["quotation-select"]}
         >
           <option value="ผู้มีอำนาจ">ผู้เสนอราคา</option>
           <option value="ผู้ส่งของ">ผู้ส่งของ</option>
@@ -649,22 +660,22 @@ export default function QuotationForm({ company }) {
             placeholder="ระบุตำแหน่ง"
             value={customCompanyRole}
             onChange={(e) => setCustomCompanyRole(e.target.value)}
-            className="quotation-input"
+            className={styles["quotation-input"]}
           />
         )}
       </div>
 
-      <div className="quotation-section">
+      <div className={styles["quotation-section"]}>
         <h3>ลายเซ็นลูกค้า</h3>
         <SignatureCanvas
           penColor="black"
-          canvasProps={{ width: 300, height: 100, className: 'signature-canvas' }}
+          canvasProps={{ width: 300, height: 100, className: styles["signature-canvas"] }}
           ref={clientSigPadRef}
         />
         <div style={{ marginTop: 8 }}>
           <button
             type="button"
-            className="quotation-button lightgray"
+            className={styles["quotation-button lightgray"]}
             onClick={() => {
               clientSigPadRef.current.clear();
               setClientSignatureURL('');
@@ -674,7 +685,7 @@ export default function QuotationForm({ company }) {
           </button>
           <button
             type="button"
-            className="quotation-button blue"
+            className={styles["quotation-button blue"]}
             onClick={() => {
               const dataURL = clientSigPadRef.current.getCanvas().toDataURL('image/png');
               setClientSignatureURL(dataURL);
@@ -686,14 +697,14 @@ export default function QuotationForm({ company }) {
         </div>
       </div>
       
-      <div className="quotation-buttons">
-        <button onClick={() => navigate('/company-form')} className="quotation-button gray">
+      <div className={styles["quotation-buttons"]}>
+        <button onClick={() => router.push('/company-form')} className={styles["quotation-button gray"]}>
           🔧 แก้ข้อมูลบริษัท
         </button>
-        <button onClick={generatePDF} className="quotation-button blue">
+        <button onClick={generatePDF} className={styles["quotation-button blue"]}>
           📄 สร้าง PDF
         </button>
-        <button onClick={clearCache} className="quotation-button lightgray">
+        <button onClick={clearCache} className={styles["quotation-button lightgray"]}>
           🗑 ล้างข้อมูล
         </button>
       </div>

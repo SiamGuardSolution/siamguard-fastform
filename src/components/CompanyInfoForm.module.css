@@ -1,0 +1,103 @@
+.companyFormContainer {
+  display: flex;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.companyForm {
+  background-color: #fff;
+  border-radius: 16px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  padding: 40px;
+  max-width: 700px;
+  width: 100%;
+}
+
+.formTitle {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.textarea {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  margin-bottom: 16px;
+  resize: vertical;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.inputGroup label {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.inputGroup input {
+  padding: 10px 12px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.checkboxRow input {
+  margin-right: 8px;
+}
+
+.logoUpload {
+  display: flex;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.logoUpload input {
+  margin-left: 12px;
+}
+
+.centeredButton {
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.buttonPrimary {
+  background-color: #6b46c1; /* สีม่วงเข้มสไตล์ Tailwind purple-700 */
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.buttonPrimary:hover {
+  background-color: #553c9a;
+}
+
+.buttonSecondary {
+  background-color: #e2e8f0;
+  color: #2d3748;
+  border: none;
+  padding: 10px 16px;
+  font-size: 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 16px;
+}

@@ -13,7 +13,7 @@
 
 # misc
 .DS_Store
-.env.local
+.env.local 
 .env.development.local
 .env.test.local
 .env.production.local
@@ -21,3 +21,6 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# .env.local
+BEAM_SECRET_KEY=1GIgZdcjzNvGxCAzp4i2Ypa4w2I27rW+cX1YE2QE1qD4=
